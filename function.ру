@@ -1,0 +1,33 @@
+# 1. Простая функция без параметров
+def say_hello():
+    print("Привет! Я функция.")
+    print("Я могу выполнять несколько строк кода одновременно.")
+
+print("Вызываем функцию:")
+say_hello()
+say_hello()  # Можем вызывать сколько угодно раз!
+
+print("\n-------------------\n")
+
+# 2. Функция с параметрами (аргументами)
+# Она принимает имя и использует его внутри
+def greet_user(name):
+    print(f"Привет, {name}! Рад тебя видеть.")
+
+greet_user("Сергей")
+greet_user("Иван")
+
+print("\n-------------------\n")
+
+# 3. Функция, которая возвращает результат (return)
+# Это калькулятор бюджета на месяц
+def calculate_monthly_budget(income, rent, food):
+    total_expenses = rent + food
+    savings = income - total_expenses
+    return savings  # Возвращаем результат, чтобы использовать его дальше
+
+# Вызываем функцию и сохраняем ответ в переменную
+my_income = 120000
+my_savings = calculate_monthly_budget(income=my_income, rent=30000, food=20000)
+
+print(f"При доходе {my_income} руб., твои накопления составят: {my_savings} руб. в месяц.")
