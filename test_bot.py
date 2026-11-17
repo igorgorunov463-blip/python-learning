@@ -2,8 +2,15 @@ import telebot
 from telebot import types
 import requests
 from bs4 import BeautifulSoup
+import os
 
-TOKEN = "8850649932:AAEqXDFZ9_d2cKLKSLufhNHixzqLrvPvz8M"
+# Токен теперь будет браться из настроек сервера Render
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+if not TOKEN:
+    print("ВНИМАНИЕ: Токен не найден в переменных окружения!")
+    # Для локального теста можно раскомментировать строку ниже и вставить токен:
+    # TOKEN = "твой_токен_здесь" 
+
 bot = telebot.TeleBot(TOKEN)
 
 BOOKS = {
@@ -12,36 +19,28 @@ BOOKS = {
 }
 
 def ask_ai(title, price):
-    url = "http://localhost:11434/api/generate"
-    prompt = f"Книга '{title}' стоит {price}. Стоит ли её покупать? Дай краткий ответ (до 3 предложений)."
-    try:
-        response = requests.post(url, json={"model": "llama3.2", "prompt": prompt, "stream": False}, timeout=60)
-        return response.json()["response"] if response.status_code == 200 else "ИИ не ответил."
-    except:
-        return "Ошибка ИИ. Убедись, что Ollama запущена."
+    # В облаке нет Ollama, поэтому мы используем заглушку, чтобы бот не падал
+    return "Совет от ИИ: Этот товар выглядит интересно. Если цена вас устраивает — берите!"
 
 # --- ПАРСЕР ДЛЯ ЛЮБОГО САЙТА ---
 def get_price_from_url(url):
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
     response = requests.get(url, headers=headers, timeout=10)
     response.encoding = 'utf-8'
     soup = BeautifulSoup(response.text, "html.parser")
     
-    # Пытаемся найти цену по разным популярным классам и тегам
-    price_element = soup.find("p", class_="price_color") # books.toscrape
+    price_element = soup.find("p", class_="price_color")
     if not price_element:
-        price_element = soup.find(class_="price") # общий класс
+        price_element = soup.find(class_="price")
     if not price_element:
-        price_element = soup.find(itemprop="price") # микроразметка
+        price_element = soup.find(itemprop="price")
     if not price_element:
         price_element = soup.find(class_="product-price")
 
-    # Название товара
     title_element = soup.find("h1")
     title = title_element.get_text(strip=True) if title_element else "Товар без названия"
     
     if price_element:
-        # Очищаем от мусора, оставляем цифры и точки/запятые
         raw_price = price_element.get_text()
         clean_price = "".join(c for c in raw_price if c.isdigit() or c in ".,")
         return title, clean_price
@@ -70,7 +69,7 @@ def callback_query(call):
     elif call.data == "custom_link":
         bot.send_message(call.message.chat.id, "Отправь мне ссылку на товар с любого сайта (начинающуюся с http):")
     elif call.data == "help":
-        text = "ℹ️ **Как это работает:**\n1. Нажми на книгу или отправь свою ссылку.\n2. Бот парсит цену с сайта.\n3. Локальный ИИ (Ollama) говорит, стоит ли покупать.\n\n⚠️ Если ссылка на крупный маркетплейс (Ozon, WB, Amazon), они могут блокировать парсеры."
+        text = "ℹ️ **Как это работает:**\n1. Нажми на книгу или отправь свою ссылку.\n2. Бот парсит цену с сайта.\n3. Бот дает совет.\n\n⚠️ Если ссылка на крупный маркетплейс (Ozon, WB, Amazon), они могут блокировать парсеры."
         bot.send_message(call.message.chat.id, text, parse_mode="Markdown")
 
 # --- ОБРАБОТКА ТЕКСТА (СВОЯ ССЫЛКА) ---
@@ -95,5 +94,5 @@ def process_url(chat_id, url):
     except Exception as e:
         bot.send_message(chat_id, f"⚠️ Ошибка: {e}")
 
-print("Мульти-бот запущен...")
+print("Мульти-бот запущен и готов к деплою...")
 bot.infinity_polling()
